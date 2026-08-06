@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Search Visibility Report - {{ audit.business_name }}</title>
+<style>
+  :root {
+    --ink: #1a1d23;
+    --ink-soft: #565d6b;
+    --line: #e3e6ea;
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --critical: #c0362c;
+    --critical-bg: #fdecea;
+    --warning: #a15c00;
+    --warning-bg: #fff4e0;
+    --good: #1e7a3d;
+    --good-bg: #e9f7ee;
+    --info: #3a5ba0;
+    --info-bg: #eaf0fb;
+    --accent: #4338ca;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  a { color: var(--accent); }
+
+  header.top { margin-bottom: 28px; }
+  header.top .eyebrow { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); font-weight: 600; }
+  header.top h1 { margin: 4px 0 6px; font-size: 28px; }
+  header.top .meta { color: var(--ink-soft); font-size: 14px; }
+  header.top .meta a { color: var(--ink-soft); }
+
+  .score-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 28px; margin-bottom: 24px; display: flex; gap: 32px; flex-wrap: wrap; align-items: center;
+  }
+  .score-big { text-align: center; min-width: 140px; }
+  .score-big .num { font-size: 56px; font-weight: 800; line-height: 1; }
+  .score-big .of100 { font-size: 16px; color: var(--ink-soft); font-weight: 600; }
+  .score-big .label { margin-top: 6px; font-size: 13px; color: var(--ink-soft); }
+  .score-breakdown { flex: 1; min-width: 280px; }
+  .score-breakdown .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .score-breakdown .row .name { width: 190px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .score-breakdown .bar-track { flex: 1; height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; }
+  .score-breakdown .bar-fill { height: 100%; border-radius: 6px; background: var(--accent); }
+  .score-breakdown .row .val { width: 70px; text-align: right; font-size: 13px; color: var(--ink-soft); flex-shrink: 0; }
+  .score-note { flex-basis: 100%; font-size: 12.5px; color: var(--ink-soft); border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 4px; }
+
+  .stat-row { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 140px; }
+  .stat .n { font-size: 22px; font-weight: 700; }
+  .stat .l { font-size: 12.5px; color: var(--ink-soft); }
+
+  section { margin-bottom: 36px; }
+  section > h2 { font-size: 19px; margin: 0 0 4px; }
+  section > .sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 16px; }
+
+  .win-card {
+    background: var(--good-bg); border: 1px solid #c6e8d0; border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 10px;
+  }
+  .win-card .n { display:inline-block; width:22px; height:22px; border-radius:50%; background:var(--good); color:#fff; text-align:center; line-height:22px; font-size:12px; font-weight:700; margin-right:8px; }
+  .win-card .t { font-weight: 600; }
+
+  .finding {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 14px;
+  }
+  .finding .fhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .finding .ftitle { font-weight: 700; font-size: 15.5px; margin: 0 0 4px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px; border-radius: 5px; white-space: nowrap; }
+  .badge.critical { background: var(--critical-bg); color: var(--critical); }
+  .badge.warning { background: var(--warning-bg); color: var(--warning); }
+  .badge.good { background: var(--good-bg); color: var(--good); }
+  .badge.info { background: var(--info-bg); color: var(--info); }
+  .tags { display: flex; gap: 6px; flex-shrink: 0; }
+  .tag-ie { font-size: 11px; color: var(--ink-soft); background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; white-space: nowrap; }
+
+  .finding .location { font-size: 12.5px; color: var(--ink-soft); margin: 6px 0 10px; }
+  .finding .location code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+  .finding .evidence-label, .finding .fix-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); font-weight: 700; margin: 10px 0 4px; }
+  .finding pre {
+    background: #1a1d23; color: #e3e6ea; padding: 12px 14px; border-radius: 8px;
+    font-size: 12.5px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; margin: 0;
+  }
+  .finding .recommendation { margin: 10px 0 0; font-size: 14px; }
+  .fix-block { position: relative; margin-top: 6px; }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px; font-size: 11px; padding: 4px 9px;
+    background: #2d323c; color: #e3e6ea; border: 1px solid #444a56; border-radius: 6px; cursor: pointer;
+  }
+  .copy-btn:hover { background: #383e4a; }
+  .copy-btn.copied { background: var(--good); border-color: var(--good); color: #fff; }
+
+  details.check-detail { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; }
+  details.check-detail summary { cursor: pointer; font-weight: 700; font-size: 15px; list-style: none; display: flex; align-items: center; justify-content: space-between; }
+  details.check-detail summary::-webkit-details-marker { display: none; }
+  details.check-detail .why { color: var(--ink-soft); font-size: 13.5px; margin: 8px 0 14px; }
+  details.check-detail .findings-inner { margin-top: 10px; }
+
+  footer { color: var(--ink-soft); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">AI Search Visibility Report</div>
+    <h1>{{ audit.business_name }}</h1>
+    <div class="meta">
+      <a href="{{ audit.url }}" target="_blank" rel="noopener">{{ audit.url }}</a>
+      {% if audit.category %} · {{ audit.category }}{% endif %}
+      {% if audit.location %} · {{ audit.location }}{% endif %}
+      &nbsp;·&nbsp;generated {{ audit.generated_at }}
+    </div>
+  </header>
+
+  <div class="score-card">
+    <div class="score-big">
+      <div class="num">{{ audit.overall_score | round(0, 'floor') | int }}</div>
+      <div class="of100">/ 100</div>
+      <div class="label">AI Visibility Score</div>
+    </div>
+    <div class="score-breakdown">
+      {% for check in audit.checks %}
+      <div class="row">
+        <div class="name">{{ check.name }}{% if check.mocked %} (mocked){% endif %}</div>
+        <div class="bar-track"><div class="bar-fill" style="width: {{ check.score }}%; {% if check.mocked %}opacity:.35{% endif %}"></div></div>
+        <div class="val">{{ check.score }} / {{ check.max_score | int }}</div>
+      </div>
+      {% endfor %}
+      <div class="score-note">
+        Overall score is the plain average of the {{ audit.checks | length - (audit.score_excludes | length) }} scored check(s) above{% if audit.score_excludes %}. {{ audit.score_excludes | length }} check(s) are mocked and excluded from the average — see the Methodology note at the bottom{% endif %}. No hidden weighting: add up the numbers above and divide, and you get {{ audit.overall_score }}.
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">{{ issue_count }}</div><div class="l">issues found, each with evidence</div></div>
+    <div class="stat"><div class="n">{{ good_count }}</div><div class="l">things already working</div></div>
+    <div class="stat"><div class="n">{{ audit.checks | length }}</div><div class="l">checks run</div></div>
+  </div>
+
+  {% if quick_wins %}
+  <section>
+    <h2>Do these first</h2>
+    <div class="sub">Highest impact for the least effort — ranked by impact × effort, not by how the checks happen to be ordered.</div>
+    {% for check, f in quick_wins %}
+    <div class="win-card">
+      <span class="n">{{ loop.index }}</span><span class="t">{{ f.title }}</span>
+      <div style="margin-top:4px; font-size:13.5px; color:var(--ink-soft);">{{ check.name }} · impact {{ f.impact }}/5 · effort {{ f.effort }}/5</div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section>
+    <h2>What to fix, in order</h2>
+    <div class="sub">Every finding below is backed by evidence pulled directly from the site — not generic advice. Sorted by impact × effort (impact matters more).</div>
+
+    {% for check, f in actionable %}
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">{{ loop.index }}. {{ f.title }}</div>
+          <span class="badge {{ f.severity }}">{{ f.severity }}</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact {{ f.impact }}/5</span>
+          <span class="tag-ie">effort {{ f.effort }}/5</span>
+        </div>
+      </div>
+      <div class="location">{{ check.name }} · <code>{{ f.location }}</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>{{ f.evidence }}</pre>
+
+      <p class="recommendation">{{ f.recommendation }}</p>
+
+      {% if f.fix %}
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-{{ check.check_id }}-{{ f.id }}">{{ f.fix }}</pre>
+        <button class="copy-btn" onclick="copyFix('fix-{{ check.check_id }}-{{ f.id }}', this)">Copy</button>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if not actionable %}
+    <div class="finding">No actionable issues found across the checks below — nice work.</div>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Full check-by-check detail</h2>
+    <div class="sub">Includes what's already working, not just what's broken.</div>
+    {% for check in audit.checks %}
+    <details class="check-detail">
+      <summary>
+        <span>{{ check.name }}{% if check.mocked %} — mocked{% endif %}</span>
+        <span>{{ check.score }} / {{ check.max_score | int }}</span>
+      </summary>
+      <div class="why"><strong>Why this check exists:</strong> {{ check.why_it_matters }}</div>
+      {% if check.mocked %}
+      <div class="why" style="color:var(--warning);"><strong>Mocked:</strong> {{ check.mock_reason }}</div>
+      {% endif %}
+      <div class="findings-inner">
+        {% for f in check.findings | sort(attribute='severity', reverse=False) %}
+        <div class="finding" style="{% if f.severity == 'good' %}opacity:.85{% endif %}">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">{{ f.title }}</div>
+              <span class="badge {{ f.severity }}">{{ f.severity }}</span>
+            </div>
+            {% if f.severity != 'good' %}
+            <div class="tags">
+              <span class="tag-ie">impact {{ f.impact }}/5</span>
+              <span class="tag-ie">effort {{ f.effort }}/5</span>
+            </div>
+            {% endif %}
+          </div>
+          <div class="location"><code>{{ f.location }}</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>{{ f.evidence }}</pre>
+          <p class="recommendation">{{ f.recommendation }}</p>
+          {% if f.fix %}
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-{{ check.check_id }}-{{ f.id }}">{{ f.fix }}</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-{{ check.check_id }}-{{ f.id }}', this)">Copy</button>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+    {% endfor %}
+  </section>
+
+  <footer>
+    Methodology: three checks, each scored 0–100 independently with the reasoning documented in "why this check exists" above; the overall score is their plain average.
+    {% if audit.score_excludes %}Mocked checks ({{ audit.score_excludes | join(', ') }}) are shown but excluded from that average.{% endif %}
+    This audit inspects up to a handful of pages per site (homepage plus a couple of linked pages) — it's a spot-check, not a full crawl, and it reflects what was true at generation time above. See the project README for what's real vs. mocked and what's out of scope.
+  </footer>
+
+</div>
+<script>
+function copyFix(id, btn) {
+  var text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(function () {
+    var original = btn.textContent;
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    setTimeout(function () { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+  });
+}
+</script>
+</body>
+</html>

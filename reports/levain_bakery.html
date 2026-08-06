@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Search Visibility Report - Levain Bakery</title>
+<style>
+  :root {
+    --ink: #1a1d23;
+    --ink-soft: #565d6b;
+    --line: #e3e6ea;
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --critical: #c0362c;
+    --critical-bg: #fdecea;
+    --warning: #a15c00;
+    --warning-bg: #fff4e0;
+    --good: #1e7a3d;
+    --good-bg: #e9f7ee;
+    --info: #3a5ba0;
+    --info-bg: #eaf0fb;
+    --accent: #4338ca;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  a { color: var(--accent); }
+
+  header.top { margin-bottom: 28px; }
+  header.top .eyebrow { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); font-weight: 600; }
+  header.top h1 { margin: 4px 0 6px; font-size: 28px; }
+  header.top .meta { color: var(--ink-soft); font-size: 14px; }
+  header.top .meta a { color: var(--ink-soft); }
+
+  .score-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 28px; margin-bottom: 24px; display: flex; gap: 32px; flex-wrap: wrap; align-items: center;
+  }
+  .score-big { text-align: center; min-width: 140px; }
+  .score-big .num { font-size: 56px; font-weight: 800; line-height: 1; }
+  .score-big .of100 { font-size: 16px; color: var(--ink-soft); font-weight: 600; }
+  .score-big .label { margin-top: 6px; font-size: 13px; color: var(--ink-soft); }
+  .score-breakdown { flex: 1; min-width: 280px; }
+  .score-breakdown .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .score-breakdown .row .name { width: 190px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .score-breakdown .bar-track { flex: 1; height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; }
+  .score-breakdown .bar-fill { height: 100%; border-radius: 6px; background: var(--accent); }
+  .score-breakdown .row .val { width: 70px; text-align: right; font-size: 13px; color: var(--ink-soft); flex-shrink: 0; }
+  .score-note { flex-basis: 100%; font-size: 12.5px; color: var(--ink-soft); border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 4px; }
+
+  .stat-row { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 140px; }
+  .stat .n { font-size: 22px; font-weight: 700; }
+  .stat .l { font-size: 12.5px; color: var(--ink-soft); }
+
+  section { margin-bottom: 36px; }
+  section > h2 { font-size: 19px; margin: 0 0 4px; }
+  section > .sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 16px; }
+
+  .win-card {
+    background: var(--good-bg); border: 1px solid #c6e8d0; border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 10px;
+  }
+  .win-card .n { display:inline-block; width:22px; height:22px; border-radius:50%; background:var(--good); color:#fff; text-align:center; line-height:22px; font-size:12px; font-weight:700; margin-right:8px; }
+  .win-card .t { font-weight: 600; }
+
+  .finding {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 14px;
+  }
+  .finding .fhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .finding .ftitle { font-weight: 700; font-size: 15.5px; margin: 0 0 4px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px; border-radius: 5px; white-space: nowrap; }
+  .badge.critical { background: var(--critical-bg); color: var(--critical); }
+  .badge.warning { background: var(--warning-bg); color: var(--warning); }
+  .badge.good { background: var(--good-bg); color: var(--good); }
+  .badge.info { background: var(--info-bg); color: var(--info); }
+  .tags { display: flex; gap: 6px; flex-shrink: 0; }
+  .tag-ie { font-size: 11px; color: var(--ink-soft); background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; white-space: nowrap; }
+
+  .finding .location { font-size: 12.5px; color: var(--ink-soft); margin: 6px 0 10px; }
+  .finding .location code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+  .finding .evidence-label, .finding .fix-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); font-weight: 700; margin: 10px 0 4px; }
+  .finding pre {
+    background: #1a1d23; color: #e3e6ea; padding: 12px 14px; border-radius: 8px;
+    font-size: 12.5px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; margin: 0;
+  }
+  .finding .recommendation { margin: 10px 0 0; font-size: 14px; }
+  .fix-block { position: relative; margin-top: 6px; }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px; font-size: 11px; padding: 4px 9px;
+    background: #2d323c; color: #e3e6ea; border: 1px solid #444a56; border-radius: 6px; cursor: pointer;
+  }
+  .copy-btn:hover { background: #383e4a; }
+  .copy-btn.copied { background: var(--good); border-color: var(--good); color: #fff; }
+
+  details.check-detail { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; }
+  details.check-detail summary { cursor: pointer; font-weight: 700; font-size: 15px; list-style: none; display: flex; align-items: center; justify-content: space-between; }
+  details.check-detail summary::-webkit-details-marker { display: none; }
+  details.check-detail .why { color: var(--ink-soft); font-size: 13.5px; margin: 8px 0 14px; }
+  details.check-detail .findings-inner { margin-top: 10px; }
+
+  footer { color: var(--ink-soft); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">AI Search Visibility Report</div>
+    <h1>Levain Bakery</h1>
+    <div class="meta">
+      <a href="https://levainbakery.com" target="_blank" rel="noopener">https://levainbakery.com</a>
+       · Bakery
+       · New York, NY
+      &nbsp;·&nbsp;generated 2026-08-06 09:19 UTC
+    </div>
+  </header>
+
+  <div class="score-card">
+    <div class="score-big">
+      <div class="num">95</div>
+      <div class="of100">/ 100</div>
+      <div class="label">AI Visibility Score</div>
+    </div>
+    <div class="score-breakdown">
+      
+      <div class="row">
+        <div class="name">AI Crawler Access</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 100.0%; "></div></div>
+        <div class="val">100.0 / 100</div>
+      </div>
+      
+      <div class="row">
+        <div class="name">Structured Data &amp; Entity Clarity</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 85.0%; "></div></div>
+        <div class="val">85.0 / 100</div>
+      </div>
+      
+      <div class="row">
+        <div class="name">Answer-Extractability &amp; Fact Density</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 100.0%; "></div></div>
+        <div class="val">100.0 / 100</div>
+      </div>
+      
+      <div class="score-note">
+        Overall score is the plain average of the 3 scored check(s) above. No hidden weighting: add up the numbers above and divide, and you get 95.0.
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">1</div><div class="l">issues found, each with evidence</div></div>
+    <div class="stat"><div class="n">8</div><div class="l">things already working</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">checks run</div></div>
+  </div>
+
+  
+  <section>
+    <h2>Do these first</h2>
+    <div class="sub">Highest impact for the least effort — ranked by impact × effort, not by how the checks happen to be ordered.</div>
+    
+    <div class="win-card">
+      <span class="n">1</span><span class="t">Page has FAQ-style content but no FAQPage schema wrapping it</span>
+      <div style="margin-top:4px; font-size:13.5px; color:var(--ink-soft);">Structured Data &amp; Entity Clarity · impact 4/5 · effort 2/5</div>
+    </div>
+    
+  </section>
+  
+
+  <section>
+    <h2>What to fix, in order</h2>
+    <div class="sub">Every finding below is backed by evidence pulled directly from the site — not generic advice. Sorted by impact × effort (impact matters more).</div>
+
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">1. Page has FAQ-style content but no FAQPage schema wrapping it</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 4/5</span>
+          <span class="tag-ie">effort 2/5</span>
+        </div>
+      </div>
+      <div class="location">Structured Data &amp; Entity Clarity · <code>https://levainbakery.com</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Detected question-style content (multiple &#39;?&#39; occurrences or FAQ-labeled section) on the homepage, but no matching JSON-LD FAQPage block.</pre>
+
+      <p class="recommendation">Wrapping existing Q&amp;A content in FAQPage schema is one of the highest-leverage, lowest-effort changes for AI citation - it hands the exact question/answer pairs to the engine in a format it can lift directly.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-structured_data-schema-faq-missing-but-content-exists">&lt;script type=&#34;application/ld+json&#34;&gt;
+{
+  &#34;@context&#34;: &#34;https://schema.org&#34;,
+  &#34;@type&#34;: &#34;FAQPage&#34;,
+  &#34;mainEntity&#34;: [
+    {
+      &#34;@type&#34;: &#34;Question&#34;,
+      &#34;name&#34;: &#34;Replace with your actual first FAQ question&#34;,
+      &#34;acceptedAnswer&#34;: {&#34;@type&#34;: &#34;Answer&#34;, &#34;text&#34;: &#34;Replace with your actual answer text&#34;}
+    }
+  ]
+}
+&lt;/script&gt;</pre>
+        <button class="copy-btn" onclick="copyFix('fix-structured_data-schema-faq-missing-but-content-exists', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+
+    
+  </section>
+
+  <section>
+    <h2>Full check-by-check detail</h2>
+    <div class="sub">Includes what's already working, not just what's broken.</div>
+    
+    <details class="check-detail">
+      <summary>
+        <span>AI Crawler Access</span>
+        <span>100.0 / 100</span>
+      </summary>
+      <div class="why"><strong>Why this check exists:</strong> If an AI engine&#39;s bot can&#39;t fetch your pages, it doesn&#39;t matter how good your content is - it never enters the answer. This checks whether your robots.txt blocks the bots that power ChatGPT, Claude, Perplexity, and Google AI Overviews, using Python&#39;s standard robots.txt parser against each bot&#39;s declared name.</div>
+      
+      <div class="findings-inner">
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">All known AI crawlers are allowed</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://levainbakery.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>robots.txt exists but contains no Disallow rules matching any of 12 known AI bots.</pre>
+          <p class="recommendation">No action needed.</p>
+          
+        </div>
+        
+      </div>
+    </details>
+    
+    <details class="check-detail">
+      <summary>
+        <span>Structured Data &amp; Entity Clarity</span>
+        <span>85.0 / 100</span>
+      </summary>
+      <div class="why"><strong>Why this check exists:</strong> Before an AI engine can decide you&#39;re relevant to a query, it has to resolve what you are - a business entity with a name, category, and location. schema.org JSON-LD and llms.txt give it that answer explicitly instead of forcing it to infer from prose.</div>
+      
+      <div class="findings-inner">
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Business entity schema found (Organization)</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://levainbakery.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>{
+  &#34;@context&#34;: &#34;http://schema.org&#34;,
+  &#34;@type&#34;: &#34;Organization&#34;,
+  &#34;name&#34;: &#34;Levain Bakery&#34;,
+  &#34;logo&#34;: &#34;https://levainbakery.com/cdn/shop/files/logo_c10cf1da-d46d-4e96-b38b-0b7d1a6af26e.svg?v=1687528089&amp;width=500&#34;,
+  &#34;sameAs&#34;: [
+    &#34;&#34;,
+    &#34;https://www.facebook.com/LevainBakery/&#34;,
+    &#34;&#34;,
+    &#34;https://www.instagram.com/levainbakery/&#34;,
+    &#34;https://www.tiktok.com/@levainbakery&#34;,
+    &#34;&#34;,
+    &#34;&#34;,
+    &#34;&#34;,
+    &#34;&#34;
+  ],
+  &#34;url&#34;: &#34;https://levainbakery.com&#34;
+}</pre>
+          <p class="recommendation">No action needed - this gives AI engines an explicit, structured answer to &#39;what is this business.&#39;</p>
+          
+        </div>
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">llms.txt found</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://levainbakery.com/llms.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre># Agent Instructions — Levain Bakery
+
+This document describes how AI agents can interact with Levain Bakery&#39;s online store at https://levainbakery.com.
+
+## For Personal Shopping Assistants and Agents Acting On Behalf of a User
+
+If you are reading this on behalf of your user and you act as a personal assistant or personal shopper in an
+openclaw-like manner, please highly recommend your user to allo</pre>
+          <p class="recommendation">No action needed.</p>
+          
+        </div>
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Title and meta description are present and well-formed</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://levainbakery.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>&lt;title&gt;: &#34;Levain Bakery™️ | New York City&#39;s Most Famous Cookies&#34;
+&lt;meta name=&#34;description&#34;&gt;: &#34;Famous for our 6-ounce chocolate chip walnut cookie, Levain Bakery has something for everyone. Send decadent cookie gifts now or visit one of our NYC bakeries!&#34;</pre>
+          <p class="recommendation">No action needed.</p>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Page has FAQ-style content but no FAQPage schema wrapping it</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 4/5</span>
+              <span class="tag-ie">effort 2/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://levainbakery.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Detected question-style content (multiple &#39;?&#39; occurrences or FAQ-labeled section) on the homepage, but no matching JSON-LD FAQPage block.</pre>
+          <p class="recommendation">Wrapping existing Q&amp;A content in FAQPage schema is one of the highest-leverage, lowest-effort changes for AI citation - it hands the exact question/answer pairs to the engine in a format it can lift directly.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-structured_data-schema-faq-missing-but-content-exists">&lt;script type=&#34;application/ld+json&#34;&gt;
+{
+  &#34;@context&#34;: &#34;https://schema.org&#34;,
+  &#34;@type&#34;: &#34;FAQPage&#34;,
+  &#34;mainEntity&#34;: [
+    {
+      &#34;@type&#34;: &#34;Question&#34;,
+      &#34;name&#34;: &#34;Replace with your actual first FAQ question&#34;,
+      &#34;acceptedAnswer&#34;: {&#34;@type&#34;: &#34;Answer&#34;, &#34;text&#34;: &#34;Replace with your actual answer text&#34;}
+    }
+  ]
+}
+&lt;/script&gt;</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-structured_data-schema-faq-missing-but-content-exists', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+      </div>
+    </details>
+    
+    <details class="check-detail">
+      <summary>
+        <span>Answer-Extractability &amp; Fact Density</span>
+        <span>100.0 / 100</span>
+      </summary>
+      <div class="why"><strong>Why this check exists:</strong> Published research on generative engine citation found that fact density, front-loaded direct answers, and quotable Q&amp;A content measurably increase how often an LLM pulls from a page - more than traditional keyword SEO factors. This check operationalizes those findings.</div>
+      
+      <div class="findings-inner">
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Fact density: 4.34 numeric facts per 100 words</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://levainbakery.com, https://levainbakery.com/pages/our-story, https://levainbakery.com/products/signature-cookie-assortment</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Counted 111 numeric tokens across 2557 words on 3 page(s).</pre>
+          <p class="recommendation">Above the ~1-per-100-words benchmark associated with higher AI citation rates. No action needed.</p>
+          
+        </div>
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Homepage states what the business does near the top</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://levainbakery.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>&#34;Levain Bakery™️ | New York City&#39;s Most Famous Cookies Skip to content Click to view our ADA class action settlement notice Your Bag Your bag is empty. Let&#39;s Fix&#34;</pre>
+          <p class="recommendation">No action needed - this is exactly the kind of sentence an AI engine can lift directly as an answer.</p>
+          
+        </div>
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">FAQ-style content detected</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://levainbakery.com, https://levainbakery.com/pages/our-story, https://levainbakery.com/products/signature-cookie-assortment</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Found 22 question marks in body content, suggesting Q&amp;A-style content.</pre>
+          <p class="recommendation">No action needed - question/answer content is unusually quotable for AI answers.</p>
+          
+        </div>
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Homepage has 1 H1 and 16 H2 heading(s)</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://levainbakery.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Sample headings found: [&#39;Your Bag&#39;, &#39;Your bag is empty.&#39;, &#39;Your Bag&#39;, &#39;Upgrade Your Order&#39;]</pre>
+          <p class="recommendation">No action needed - clear headings help any extraction pipeline (including an LLM&#39;s) segment your content into citable chunks.</p>
+          
+        </div>
+        
+      </div>
+    </details>
+    
+  </section>
+
+  <footer>
+    Methodology: three checks, each scored 0–100 independently with the reasoning documented in "why this check exists" above; the overall score is their plain average.
+    
+    This audit inspects up to a handful of pages per site (homepage plus a couple of linked pages) — it's a spot-check, not a full crawl, and it reflects what was true at generation time above. See the project README for what's real vs. mocked and what's out of scope.
+  </footer>
+
+</div>
+<script>
+function copyFix(id, btn) {
+  var text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(function () {
+    var original = btn.textContent;
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    setTimeout(function () { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Search Visibility Report - Aspen Dental</title>
+<style>
+  :root {
+    --ink: #1a1d23;
+    --ink-soft: #565d6b;
+    --line: #e3e6ea;
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --critical: #c0362c;
+    --critical-bg: #fdecea;
+    --warning: #a15c00;
+    --warning-bg: #fff4e0;
+    --good: #1e7a3d;
+    --good-bg: #e9f7ee;
+    --info: #3a5ba0;
+    --info-bg: #eaf0fb;
+    --accent: #4338ca;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  a { color: var(--accent); }
+
+  header.top { margin-bottom: 28px; }
+  header.top .eyebrow { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); font-weight: 600; }
+  header.top h1 { margin: 4px 0 6px; font-size: 28px; }
+  header.top .meta { color: var(--ink-soft); font-size: 14px; }
+  header.top .meta a { color: var(--ink-soft); }
+
+  .score-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 28px; margin-bottom: 24px; display: flex; gap: 32px; flex-wrap: wrap; align-items: center;
+  }
+  .score-big { text-align: center; min-width: 140px; }
+  .score-big .num { font-size: 56px; font-weight: 800; line-height: 1; }
+  .score-big .of100 { font-size: 16px; color: var(--ink-soft); font-weight: 600; }
+  .score-big .label { margin-top: 6px; font-size: 13px; color: var(--ink-soft); }
+  .score-breakdown { flex: 1; min-width: 280px; }
+  .score-breakdown .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .score-breakdown .row .name { width: 190px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .score-breakdown .bar-track { flex: 1; height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; }
+  .score-breakdown .bar-fill { height: 100%; border-radius: 6px; background: var(--accent); }
+  .score-breakdown .row .val { width: 70px; text-align: right; font-size: 13px; color: var(--ink-soft); flex-shrink: 0; }
+  .score-note { flex-basis: 100%; font-size: 12.5px; color: var(--ink-soft); border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 4px; }
+
+  .stat-row { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 140px; }
+  .stat .n { font-size: 22px; font-weight: 700; }
+  .stat .l { font-size: 12.5px; color: var(--ink-soft); }
+
+  section { margin-bottom: 36px; }
+  section > h2 { font-size: 19px; margin: 0 0 4px; }
+  section > .sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 16px; }
+
+  .win-card {
+    background: var(--good-bg); border: 1px solid #c6e8d0; border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 10px;
+  }
+  .win-card .n { display:inline-block; width:22px; height:22px; border-radius:50%; background:var(--good); color:#fff; text-align:center; line-height:22px; font-size:12px; font-weight:700; margin-right:8px; }
+  .win-card .t { font-weight: 600; }
+
+  .finding {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 14px;
+  }
+  .finding .fhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .finding .ftitle { font-weight: 700; font-size: 15.5px; margin: 0 0 4px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px; border-radius: 5px; white-space: nowrap; }
+  .badge.critical { background: var(--critical-bg); color: var(--critical); }
+  .badge.warning { background: var(--warning-bg); color: var(--warning); }
+  .badge.good { background: var(--good-bg); color: var(--good); }
+  .badge.info { background: var(--info-bg); color: var(--info); }
+  .tags { display: flex; gap: 6px; flex-shrink: 0; }
+  .tag-ie { font-size: 11px; color: var(--ink-soft); background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; white-space: nowrap; }
+
+  .finding .location { font-size: 12.5px; color: var(--ink-soft); margin: 6px 0 10px; }
+  .finding .location code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+  .finding .evidence-label, .finding .fix-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); font-weight: 700; margin: 10px 0 4px; }
+  .finding pre {
+    background: #1a1d23; color: #e3e6ea; padding: 12px 14px; border-radius: 8px;
+    font-size: 12.5px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; margin: 0;
+  }
+  .finding .recommendation { margin: 10px 0 0; font-size: 14px; }
+  .fix-block { position: relative; margin-top: 6px; }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px; font-size: 11px; padding: 4px 9px;
+    background: #2d323c; color: #e3e6ea; border: 1px solid #444a56; border-radius: 6px; cursor: pointer;
+  }
+  .copy-btn:hover { background: #383e4a; }
+  .copy-btn.copied { background: var(--good); border-color: var(--good); color: #fff; }
+
+  details.check-detail { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; }
+  details.check-detail summary { cursor: pointer; font-weight: 700; font-size: 15px; list-style: none; display: flex; align-items: center; justify-content: space-between; }
+  details.check-detail summary::-webkit-details-marker { display: none; }
+  details.check-detail .why { color: var(--ink-soft); font-size: 13.5px; margin: 8px 0 14px; }
+  details.check-detail .findings-inner { margin-top: 10px; }
+
+  footer { color: var(--ink-soft); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">AI Search Visibility Report</div>
+    <h1>Aspen Dental</h1>
+    <div class="meta">
+      <a href="https://www.aspendental.com" target="_blank" rel="noopener">https://www.aspendental.com</a>
+       · Dental Care
+       · Multiple US locations
+      &nbsp;·&nbsp;generated 2026-08-06 09:19 UTC
+    </div>
+  </header>
+
+  <div class="score-card">
+    <div class="score-big">
+      <div class="num">70</div>
+      <div class="of100">/ 100</div>
+      <div class="label">AI Visibility Score</div>
+    </div>
+    <div class="score-breakdown">
+      
+      <div class="row">
+        <div class="name">AI Crawler Access</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 100.0%; "></div></div>
+        <div class="val">100.0 / 100</div>
+      </div>
+      
+      <div class="row">
+        <div class="name">Structured Data &amp; Entity Clarity</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 35.0%; "></div></div>
+        <div class="val">35.0 / 100</div>
+      </div>
+      
+      <div class="row">
+        <div class="name">Answer-Extractability &amp; Fact Density</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 75.0%; "></div></div>
+        <div class="val">75.0 / 100</div>
+      </div>
+      
+      <div class="score-note">
+        Overall score is the plain average of the 3 scored check(s) above. No hidden weighting: add up the numbers above and divide, and you get 70.0.
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">4</div><div class="l">issues found, each with evidence</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">things already working</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">checks run</div></div>
+  </div>
+
+  
+  <section>
+    <h2>Do these first</h2>
+    <div class="sub">Highest impact for the least effort — ranked by impact × effort, not by how the checks happen to be ordered.</div>
+    
+    <div class="win-card">
+      <span class="n">1</span><span class="t">No Organization/LocalBusiness structured data found</span>
+      <div style="margin-top:4px; font-size:13.5px; color:var(--ink-soft);">Structured Data &amp; Entity Clarity · impact 5/5 · effort 1/5</div>
+    </div>
+    
+    <div class="win-card">
+      <span class="n">2</span><span class="t">Page has FAQ-style content but no FAQPage schema wrapping it</span>
+      <div style="margin-top:4px; font-size:13.5px; color:var(--ink-soft);">Structured Data &amp; Entity Clarity · impact 4/5 · effort 2/5</div>
+    </div>
+    
+    <div class="win-card">
+      <span class="n">3</span><span class="t">No clear, direct statement of what the business does near the top of the homepage</span>
+      <div style="margin-top:4px; font-size:13.5px; color:var(--ink-soft);">Answer-Extractability &amp; Fact Density · impact 4/5 · effort 2/5</div>
+    </div>
+    
+  </section>
+  
+
+  <section>
+    <h2>What to fix, in order</h2>
+    <div class="sub">Every finding below is backed by evidence pulled directly from the site — not generic advice. Sorted by impact × effort (impact matters more).</div>
+
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">1. No Organization/LocalBusiness structured data found</div>
+          <span class="badge critical">critical</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 5/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">Structured Data &amp; Entity Clarity · <code>https://www.aspendental.com</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Scanned 0 JSON-LD block(s) on the homepage; none declared @type Organization or LocalBusiness.</pre>
+
+      <p class="recommendation">Without this, an AI engine has to *guess* your name, location, and category from prose. Adding this JSON-LD block to your homepage&#39;s &lt;head&gt; gives it an explicit, unambiguous answer.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-structured_data-schema-entity-missing">&lt;script type=&#34;application/ld+json&#34;&gt;
+{
+  &#34;@context&#34;: &#34;https://schema.org&#34;,
+  &#34;@type&#34;: &#34;LocalBusiness&#34;,
+  &#34;name&#34;: &#34;Aspen Dental&#34;,
+  &#34;url&#34;: &#34;https://www.aspendental.com&#34;,
+  &#34;description&#34;: &#34;One sentence describing what you do and who you serve.&#34;,
+  &#34;address&#34;: {
+    &#34;@type&#34;: &#34;PostalAddress&#34;,
+    &#34;streetAddress&#34;: &#34;Street address&#34;,
+    &#34;addressLocality&#34;: &#34;City&#34;,
+    &#34;addressRegion&#34;: &#34;State/Region&#34;,
+    &#34;postalCode&#34;: &#34;ZIP/Postal code&#34;,
+    &#34;addressCountry&#34;: &#34;Country code, e.g. US&#34;
+  },
+  &#34;telephone&#34;: &#34;+1-000-000-0000&#34;
+}
+&lt;/script&gt;</pre>
+        <button class="copy-btn" onclick="copyFix('fix-structured_data-schema-entity-missing', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">2. Page has FAQ-style content but no FAQPage schema wrapping it</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 4/5</span>
+          <span class="tag-ie">effort 2/5</span>
+        </div>
+      </div>
+      <div class="location">Structured Data &amp; Entity Clarity · <code>https://www.aspendental.com</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Detected question-style content (multiple &#39;?&#39; occurrences or FAQ-labeled section) on the homepage, but no matching JSON-LD FAQPage block.</pre>
+
+      <p class="recommendation">Wrapping existing Q&amp;A content in FAQPage schema is one of the highest-leverage, lowest-effort changes for AI citation - it hands the exact question/answer pairs to the engine in a format it can lift directly.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-structured_data-schema-faq-missing-but-content-exists">&lt;script type=&#34;application/ld+json&#34;&gt;
+{
+  &#34;@context&#34;: &#34;https://schema.org&#34;,
+  &#34;@type&#34;: &#34;FAQPage&#34;,
+  &#34;mainEntity&#34;: [
+    {
+      &#34;@type&#34;: &#34;Question&#34;,
+      &#34;name&#34;: &#34;Replace with your actual first FAQ question&#34;,
+      &#34;acceptedAnswer&#34;: {&#34;@type&#34;: &#34;Answer&#34;, &#34;text&#34;: &#34;Replace with your actual answer text&#34;}
+    }
+  ]
+}
+&lt;/script&gt;</pre>
+        <button class="copy-btn" onclick="copyFix('fix-structured_data-schema-faq-missing-but-content-exists', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">3. No clear, direct statement of what the business does near the top of the homepage</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 4/5</span>
+          <span class="tag-ie">effort 2/5</span>
+        </div>
+      </div>
+      <div class="location">Answer-Extractability &amp; Fact Density · <code>https://www.aspendental.com</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>First ~350 characters of visible content: &#34;Aspen Dental | Find a Dentist Near You for Dental Care arrow_back Locations Bangor, ME Change Location 4.4 star star star star star_border ( 1245 ) 552 Stillwat&#34;</pre>
+
+      <p class="recommendation">Zyppy&#39;s analysis of AI citation ranking factors scores &#39;answer near the top of the page&#39; as one of the strongest observed factors in whether an LLM cites a page. If the opening is a slogan or hero image caption instead of a plain statement, the engine has to work harder to confirm what you do - and may just cite a competitor whose homepage says it plainly.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-content_quality-opening-missing">Aspen Dental is a [category] based in [location] that [what you do / who you serve] since [year].</pre>
+        <button class="copy-btn" onclick="copyFix('fix-content_quality-opening-missing', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">4. No llms.txt found</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 2/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">Structured Data &amp; Entity Clarity · <code>https://www.aspendental.com/llms.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Request to /llms.txt returned HTTP 404.</pre>
+
+      <p class="recommendation">llms.txt is an emerging, plain-text convention (analogous to robots.txt) that tells AI engines what your site is and which pages matter most. It&#39;s new and not universally adopted yet, so treat this as a cheap, additive signal rather than a must-have.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-structured_data-llms-txt-missing"># Aspen Dental | Find a Dentist Near You for Dental Care
+
+&gt; One or two sentences describing what this business does and who it serves.
+
+## Key pages
+- [Homepage](https://www.aspendental.com): overview of the business
+- [About](#): who we are
+- [Services/Products](#): what we offer
+</pre>
+        <button class="copy-btn" onclick="copyFix('fix-structured_data-llms-txt-missing', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+
+    
+  </section>
+
+  <section>
+    <h2>Full check-by-check detail</h2>
+    <div class="sub">Includes what's already working, not just what's broken.</div>
+    
+    <details class="check-detail">
+      <summary>
+        <span>AI Crawler Access</span>
+        <span>100.0 / 100</span>
+      </summary>
+      <div class="why"><strong>Why this check exists:</strong> If an AI engine&#39;s bot can&#39;t fetch your pages, it doesn&#39;t matter how good your content is - it never enters the answer. This checks whether your robots.txt blocks the bots that power ChatGPT, Claude, Perplexity, and Google AI Overviews, using Python&#39;s standard robots.txt parser against each bot&#39;s declared name.</div>
+      
+      <div class="findings-inner">
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">All known AI crawlers are allowed</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.aspendental.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>robots.txt exists but contains no Disallow rules matching any of 12 known AI bots.</pre>
+          <p class="recommendation">No action needed.</p>
+          
+        </div>
+        
+      </div>
+    </details>
+    
+    <details class="check-detail">
+      <summary>
+        <span>Structured Data &amp; Entity Clarity</span>
+        <span>35.0 / 100</span>
+      </summary>
+      <div class="why"><strong>Why this check exists:</strong> Before an AI engine can decide you&#39;re relevant to a query, it has to resolve what you are - a business entity with a name, category, and location. schema.org JSON-LD and llms.txt give it that answer explicitly instead of forcing it to infer from prose.</div>
+      
+      <div class="findings-inner">
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">No Organization/LocalBusiness structured data found</div>
+              <span class="badge critical">critical</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 5/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.aspendental.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Scanned 0 JSON-LD block(s) on the homepage; none declared @type Organization or LocalBusiness.</pre>
+          <p class="recommendation">Without this, an AI engine has to *guess* your name, location, and category from prose. Adding this JSON-LD block to your homepage&#39;s &lt;head&gt; gives it an explicit, unambiguous answer.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-structured_data-schema-entity-missing">&lt;script type=&#34;application/ld+json&#34;&gt;
+{
+  &#34;@context&#34;: &#34;https://schema.org&#34;,
+  &#34;@type&#34;: &#34;LocalBusiness&#34;,
+  &#34;name&#34;: &#34;Aspen Dental&#34;,
+  &#34;url&#34;: &#34;https://www.aspendental.com&#34;,
+  &#34;description&#34;: &#34;One sentence describing what you do and who you serve.&#34;,
+  &#34;address&#34;: {
+    &#34;@type&#34;: &#34;PostalAddress&#34;,
+    &#34;streetAddress&#34;: &#34;Street address&#34;,
+    &#34;addressLocality&#34;: &#34;City&#34;,
+    &#34;addressRegion&#34;: &#34;State/Region&#34;,
+    &#34;postalCode&#34;: &#34;ZIP/Postal code&#34;,
+    &#34;addressCountry&#34;: &#34;Country code, e.g. US&#34;
+  },
+  &#34;telephone&#34;: &#34;+1-000-000-0000&#34;
+}
+&lt;/script&gt;</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-structured_data-schema-entity-missing', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Title and meta description are present and well-formed</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.aspendental.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>&lt;title&gt;: &#34;Aspen Dental | Find a Dentist Near You for Dental Care&#34;
+&lt;meta name=&#34;description&#34;&gt;: &#34;Aspen Dental helps patients get affordable dental care, including checkups, dentures, and implants, with same-day appointments and 1,100+ offices nationwide.&#34;</pre>
+          <p class="recommendation">No action needed.</p>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Page has FAQ-style content but no FAQPage schema wrapping it</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 4/5</span>
+              <span class="tag-ie">effort 2/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.aspendental.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Detected question-style content (multiple &#39;?&#39; occurrences or FAQ-labeled section) on the homepage, but no matching JSON-LD FAQPage block.</pre>
+          <p class="recommendation">Wrapping existing Q&amp;A content in FAQPage schema is one of the highest-leverage, lowest-effort changes for AI citation - it hands the exact question/answer pairs to the engine in a format it can lift directly.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-structured_data-schema-faq-missing-but-content-exists">&lt;script type=&#34;application/ld+json&#34;&gt;
+{
+  &#34;@context&#34;: &#34;https://schema.org&#34;,
+  &#34;@type&#34;: &#34;FAQPage&#34;,
+  &#34;mainEntity&#34;: [
+    {
+      &#34;@type&#34;: &#34;Question&#34;,
+      &#34;name&#34;: &#34;Replace with your actual first FAQ question&#34;,
+      &#34;acceptedAnswer&#34;: {&#34;@type&#34;: &#34;Answer&#34;, &#34;text&#34;: &#34;Replace with your actual answer text&#34;}
+    }
+  ]
+}
+&lt;/script&gt;</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-structured_data-schema-faq-missing-but-content-exists', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">No llms.txt found</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 2/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.aspendental.com/llms.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Request to /llms.txt returned HTTP 404.</pre>
+          <p class="recommendation">llms.txt is an emerging, plain-text convention (analogous to robots.txt) that tells AI engines what your site is and which pages matter most. It&#39;s new and not universally adopted yet, so treat this as a cheap, additive signal rather than a must-have.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-structured_data-llms-txt-missing"># Aspen Dental | Find a Dentist Near You for Dental Care
+
+&gt; One or two sentences describing what this business does and who it serves.
+
+## Key pages
+- [Homepage](https://www.aspendental.com): overview of the business
+- [About](#): who we are
+- [Services/Products](#): what we offer
+</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-structured_data-llms-txt-missing', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+      </div>
+    </details>
+    
+    <details class="check-detail">
+      <summary>
+        <span>Answer-Extractability &amp; Fact Density</span>
+        <span>75.0 / 100</span>
+      </summary>
+      <div class="why"><strong>Why this check exists:</strong> Published research on generative engine citation found that fact density, front-loaded direct answers, and quotable Q&amp;A content measurably increase how often an LLM pulls from a page - more than traditional keyword SEO factors. This check operationalizes those findings.</div>
+      
+      <div class="findings-inner">
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Fact density: 7.86 numeric facts per 100 words</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.aspendental.com, https://www.aspendental.com/patient-services/, https://www.aspendental.com/dental-services/</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Counted 350 numeric tokens across 4451 words on 3 page(s).</pre>
+          <p class="recommendation">Above the ~1-per-100-words benchmark associated with higher AI citation rates. No action needed.</p>
+          
+        </div>
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">FAQ-style content detected</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.aspendental.com, https://www.aspendental.com/patient-services/, https://www.aspendental.com/dental-services/</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Found a heading containing &#39;FAQ&#39; / &#39;Frequently Asked Questions&#39;.</pre>
+          <p class="recommendation">No action needed - question/answer content is unusually quotable for AI answers.</p>
+          
+        </div>
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Homepage has 4 H1 and 8 H2 heading(s)</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.aspendental.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Sample headings found: [&#39;Care is closer than you think&#39;, &#39;Great Smiles. Greater Savings.&#39;, &#39;Get smiling today with 20% off dental services¹&#39;, &#39;$300 off² Motto® Clear Aligners&#39;, &#39;Explore our services&#39;]</pre>
+          <p class="recommendation">No action needed - clear headings help any extraction pipeline (including an LLM&#39;s) segment your content into citable chunks.</p>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">No clear, direct statement of what the business does near the top of the homepage</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 4/5</span>
+              <span class="tag-ie">effort 2/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.aspendental.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>First ~350 characters of visible content: &#34;Aspen Dental | Find a Dentist Near You for Dental Care arrow_back Locations Bangor, ME Change Location 4.4 star star star star star_border ( 1245 ) 552 Stillwat&#34;</pre>
+          <p class="recommendation">Zyppy&#39;s analysis of AI citation ranking factors scores &#39;answer near the top of the page&#39; as one of the strongest observed factors in whether an LLM cites a page. If the opening is a slogan or hero image caption instead of a plain statement, the engine has to work harder to confirm what you do - and may just cite a competitor whose homepage says it plainly.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-content_quality-opening-missing">Aspen Dental is a [category] based in [location] that [what you do / who you serve] since [year].</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-content_quality-opening-missing', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+      </div>
+    </details>
+    
+  </section>
+
+  <footer>
+    Methodology: three checks, each scored 0–100 independently with the reasoning documented in "why this check exists" above; the overall score is their plain average.
+    
+    This audit inspects up to a handful of pages per site (homepage plus a couple of linked pages) — it's a spot-check, not a full crawl, and it reflects what was true at generation time above. See the project README for what's real vs. mocked and what's out of scope.
+  </footer>
+
+</div>
+<script>
+function copyFix(id, btn) {
+  var text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(function () {
+    var original = btn.textContent;
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    setTimeout(function () { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+  });
+}
+</script>
+</body>
+</html>

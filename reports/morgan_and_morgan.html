@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Search Visibility Report - Morgan &amp; Morgan</title>
+<style>
+  :root {
+    --ink: #1a1d23;
+    --ink-soft: #565d6b;
+    --line: #e3e6ea;
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --critical: #c0362c;
+    --critical-bg: #fdecea;
+    --warning: #a15c00;
+    --warning-bg: #fff4e0;
+    --good: #1e7a3d;
+    --good-bg: #e9f7ee;
+    --info: #3a5ba0;
+    --info-bg: #eaf0fb;
+    --accent: #4338ca;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  a { color: var(--accent); }
+
+  header.top { margin-bottom: 28px; }
+  header.top .eyebrow { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); font-weight: 600; }
+  header.top h1 { margin: 4px 0 6px; font-size: 28px; }
+  header.top .meta { color: var(--ink-soft); font-size: 14px; }
+  header.top .meta a { color: var(--ink-soft); }
+
+  .score-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 28px; margin-bottom: 24px; display: flex; gap: 32px; flex-wrap: wrap; align-items: center;
+  }
+  .score-big { text-align: center; min-width: 140px; }
+  .score-big .num { font-size: 56px; font-weight: 800; line-height: 1; }
+  .score-big .of100 { font-size: 16px; color: var(--ink-soft); font-weight: 600; }
+  .score-big .label { margin-top: 6px; font-size: 13px; color: var(--ink-soft); }
+  .score-breakdown { flex: 1; min-width: 280px; }
+  .score-breakdown .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .score-breakdown .row .name { width: 190px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .score-breakdown .bar-track { flex: 1; height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; }
+  .score-breakdown .bar-fill { height: 100%; border-radius: 6px; background: var(--accent); }
+  .score-breakdown .row .val { width: 70px; text-align: right; font-size: 13px; color: var(--ink-soft); flex-shrink: 0; }
+  .score-note { flex-basis: 100%; font-size: 12.5px; color: var(--ink-soft); border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 4px; }
+
+  .stat-row { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 140px; }
+  .stat .n { font-size: 22px; font-weight: 700; }
+  .stat .l { font-size: 12.5px; color: var(--ink-soft); }
+
+  section { margin-bottom: 36px; }
+  section > h2 { font-size: 19px; margin: 0 0 4px; }
+  section > .sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 16px; }
+
+  .win-card {
+    background: var(--good-bg); border: 1px solid #c6e8d0; border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 10px;
+  }
+  .win-card .n { display:inline-block; width:22px; height:22px; border-radius:50%; background:var(--good); color:#fff; text-align:center; line-height:22px; font-size:12px; font-weight:700; margin-right:8px; }
+  .win-card .t { font-weight: 600; }
+
+  .finding {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 14px;
+  }
+  .finding .fhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .finding .ftitle { font-weight: 700; font-size: 15.5px; margin: 0 0 4px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px; border-radius: 5px; white-space: nowrap; }
+  .badge.critical { background: var(--critical-bg); color: var(--critical); }
+  .badge.warning { background: var(--warning-bg); color: var(--warning); }
+  .badge.good { background: var(--good-bg); color: var(--good); }
+  .badge.info { background: var(--info-bg); color: var(--info); }
+  .tags { display: flex; gap: 6px; flex-shrink: 0; }
+  .tag-ie { font-size: 11px; color: var(--ink-soft); background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; white-space: nowrap; }
+
+  .finding .location { font-size: 12.5px; color: var(--ink-soft); margin: 6px 0 10px; }
+  .finding .location code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+  .finding .evidence-label, .finding .fix-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); font-weight: 700; margin: 10px 0 4px; }
+  .finding pre {
+    background: #1a1d23; color: #e3e6ea; padding: 12px 14px; border-radius: 8px;
+    font-size: 12.5px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; margin: 0;
+  }
+  .finding .recommendation { margin: 10px 0 0; font-size: 14px; }
+  .fix-block { position: relative; margin-top: 6px; }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px; font-size: 11px; padding: 4px 9px;
+    background: #2d323c; color: #e3e6ea; border: 1px solid #444a56; border-radius: 6px; cursor: pointer;
+  }
+  .copy-btn:hover { background: #383e4a; }
+  .copy-btn.copied { background: var(--good); border-color: var(--good); color: #fff; }
+
+  details.check-detail { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; }
+  details.check-detail summary { cursor: pointer; font-weight: 700; font-size: 15px; list-style: none; display: flex; align-items: center; justify-content: space-between; }
+  details.check-detail summary::-webkit-details-marker { display: none; }
+  details.check-detail .why { color: var(--ink-soft); font-size: 13.5px; margin: 8px 0 14px; }
+  details.check-detail .findings-inner { margin-top: 10px; }
+
+  footer { color: var(--ink-soft); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">AI Search Visibility Report</div>
+    <h1>Morgan &amp; Morgan</h1>
+    <div class="meta">
+      <a href="https://www.morganandmorgan.com" target="_blank" rel="noopener">https://www.morganandmorgan.com</a>
+       · Law Firm
+       · Orlando, FL
+      &nbsp;·&nbsp;generated 2026-08-06 09:19 UTC
+    </div>
+  </header>
+
+  <div class="score-card">
+    <div class="score-big">
+      <div class="num">27</div>
+      <div class="of100">/ 100</div>
+      <div class="label">AI Visibility Score</div>
+    </div>
+    <div class="score-breakdown">
+      
+      <div class="row">
+        <div class="name">AI Crawler Access</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 0.0%; "></div></div>
+        <div class="val">0.0 / 100</div>
+      </div>
+      
+      <div class="row">
+        <div class="name">Structured Data &amp; Entity Clarity</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 33.0%; "></div></div>
+        <div class="val">33.0 / 100</div>
+      </div>
+      
+      <div class="row">
+        <div class="name">Answer-Extractability &amp; Fact Density</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 50.0%; "></div></div>
+        <div class="val">50.0 / 100</div>
+      </div>
+      
+      <div class="score-note">
+        Overall score is the plain average of the 3 scored check(s) above. No hidden weighting: add up the numbers above and divide, and you get 27.7.
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">17</div><div class="l">issues found, each with evidence</div></div>
+    <div class="stat"><div class="n">2</div><div class="l">things already working</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">checks run</div></div>
+  </div>
+
+  
+  <section>
+    <h2>Do these first</h2>
+    <div class="sub">Highest impact for the least effort — ranked by impact × effort, not by how the checks happen to be ordered.</div>
+    
+    <div class="win-card">
+      <span class="n">1</span><span class="t">ChatGPT-User is blocked in robots.txt</span>
+      <div style="margin-top:4px; font-size:13.5px; color:var(--ink-soft);">AI Crawler Access · impact 5/5 · effort 1/5</div>
+    </div>
+    
+    <div class="win-card">
+      <span class="n">2</span><span class="t">OAI-SearchBot is blocked in robots.txt</span>
+      <div style="margin-top:4px; font-size:13.5px; color:var(--ink-soft);">AI Crawler Access · impact 5/5 · effort 1/5</div>
+    </div>
+    
+    <div class="win-card">
+      <span class="n">3</span><span class="t">PerplexityBot is blocked in robots.txt</span>
+      <div style="margin-top:4px; font-size:13.5px; color:var(--ink-soft);">AI Crawler Access · impact 5/5 · effort 1/5</div>
+    </div>
+    
+  </section>
+  
+
+  <section>
+    <h2>What to fix, in order</h2>
+    <div class="sub">Every finding below is backed by evidence pulled directly from the site — not generic advice. Sorted by impact × effort (impact matters more).</div>
+
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">1. ChatGPT-User is blocked in robots.txt</div>
+          <span class="badge critical">critical</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 5/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>OpenAI - fetches a page live when a user asks ChatGPT to browse it or a ChatGPT search answer cites it in real time.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">ChatGPT-User is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-chatgpt-user">User-agent: ChatGPT-User
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-chatgpt-user', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">2. OAI-SearchBot is blocked in robots.txt</div>
+          <span class="badge critical">critical</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 5/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>OpenAI - indexes pages for ChatGPT&#39;s search feature; this is what populates the citations you see in ChatGPT search answers.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">OAI-SearchBot is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-oai-searchbot">User-agent: OAI-SearchBot
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-oai-searchbot', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">3. PerplexityBot is blocked in robots.txt</div>
+          <span class="badge critical">critical</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 5/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Perplexity - crawls and indexes pages so Perplexity can cite them in answers.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">PerplexityBot is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-perplexitybot">User-agent: PerplexityBot
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-perplexitybot', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">4. Perplexity-User is blocked in robots.txt</div>
+          <span class="badge critical">critical</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 5/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Perplexity - fetches a page live when a user&#39;s question triggers a real-time browse.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">Perplexity-User is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-perplexity-user">User-agent: Perplexity-User
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-perplexity-user', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">5. Claude-Web is blocked in robots.txt</div>
+          <span class="badge critical">critical</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 5/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Anthropic - fetches pages live for Claude&#39;s web search tool, the feature behind Claude&#39;s cited answers.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">Claude-Web is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-claude-web">User-agent: Claude-Web
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-claude-web', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">6. Google-Extended is blocked in robots.txt</div>
+          <span class="badge critical">critical</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 5/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Google - controls whether your content can appear in Google AI Overviews and Gemini answers (separate from normal Googlebot search indexing, which is never affected by this).
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">Google-Extended is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-google-extended">User-agent: Google-Extended
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-google-extended', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">7. No Organization/LocalBusiness structured data found</div>
+          <span class="badge critical">critical</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 5/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">Structured Data &amp; Entity Clarity · <code>https://www.morganandmorgan.com</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Scanned 0 JSON-LD block(s) on the homepage; none declared @type Organization or LocalBusiness.</pre>
+
+      <p class="recommendation">Without this, an AI engine has to *guess* your name, location, and category from prose. Adding this JSON-LD block to your homepage&#39;s &lt;head&gt; gives it an explicit, unambiguous answer.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-structured_data-schema-entity-missing">&lt;script type=&#34;application/ld+json&#34;&gt;
+{
+  &#34;@context&#34;: &#34;https://schema.org&#34;,
+  &#34;@type&#34;: &#34;LocalBusiness&#34;,
+  &#34;name&#34;: &#34;Morgan &amp; Morgan&#34;,
+  &#34;url&#34;: &#34;https://www.morganandmorgan.com&#34;,
+  &#34;description&#34;: &#34;One sentence describing what you do and who you serve.&#34;,
+  &#34;address&#34;: {
+    &#34;@type&#34;: &#34;PostalAddress&#34;,
+    &#34;streetAddress&#34;: &#34;Street address&#34;,
+    &#34;addressLocality&#34;: &#34;City&#34;,
+    &#34;addressRegion&#34;: &#34;State/Region&#34;,
+    &#34;postalCode&#34;: &#34;ZIP/Postal code&#34;,
+    &#34;addressCountry&#34;: &#34;Country code, e.g. US&#34;
+  },
+  &#34;telephone&#34;: &#34;+1-000-000-0000&#34;
+}
+&lt;/script&gt;</pre>
+        <button class="copy-btn" onclick="copyFix('fix-structured_data-schema-entity-missing', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">8. No clear, direct statement of what the business does near the top of the homepage</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 4/5</span>
+          <span class="tag-ie">effort 2/5</span>
+        </div>
+      </div>
+      <div class="location">Answer-Extractability &amp; Fact Density · <code>https://www.morganandmorgan.com</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>First ~350 characters of visible content: &#34;Homepage | Morgan &amp; Morgan Skip to main content For the People, Not the Powerful Get a FREE case evaluation today. As seen on: Morgan &amp; Morgan has recovered ove&#34;</pre>
+
+      <p class="recommendation">Zyppy&#39;s analysis of AI citation ranking factors scores &#39;answer near the top of the page&#39; as one of the strongest observed factors in whether an LLM cites a page. If the opening is a slogan or hero image caption instead of a plain statement, the engine has to work harder to confirm what you do - and may just cite a competitor whose homepage says it plainly.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-content_quality-opening-missing">Morgan &amp; Morgan is a [category] based in [location] that [what you do / who you serve] since [year].</pre>
+        <button class="copy-btn" onclick="copyFix('fix-content_quality-opening-missing', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">9. GPTBot is blocked in robots.txt</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 3/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>OpenAI - crawls content to train future GPT models.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">GPTBot is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-gptbot">User-agent: GPTBot
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-gptbot', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">10. ClaudeBot is blocked in robots.txt</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 3/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Anthropic - crawls content to train future Claude models.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">ClaudeBot is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-claudebot">User-agent: ClaudeBot
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-claudebot', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">11. anthropic-ai is blocked in robots.txt</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 3/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Anthropic - legacy crawler identifier, also used for AI training access.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">anthropic-ai is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-anthropic-ai">User-agent: anthropic-ai
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-anthropic-ai', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">12. CCBot is blocked in robots.txt</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 3/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Common Crawl - a public web dataset most major LLMs (GPT, Claude, Llama, Mistral, and others) are trained on. Blocking this affects many models&#39; future knowledge of you at once.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">CCBot is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-ccbot">User-agent: CCBot
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-ccbot', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">13. Bytespider is blocked in robots.txt</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 3/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>ByteDance - crawls content to train Doubao and other ByteDance AI models.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">Bytespider is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-bytespider">User-agent: Bytespider
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-bytespider', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">14. Applebot-Extended is blocked in robots.txt</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 3/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">AI Crawler Access · <code>https://www.morganandmorgan.com/robots.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Apple - controls use of your content for Apple Intelligence features.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+
+      <p class="recommendation">Applebot-Extended is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-crawler_access-blocked-applebot-extended">User-agent: Applebot-Extended
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+        <button class="copy-btn" onclick="copyFix('fix-crawler_access-blocked-applebot-extended', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">15. Title/meta description missing or poorly sized</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 3/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">Structured Data &amp; Entity Clarity · <code>https://www.morganandmorgan.com</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>missing meta description.
+Current &lt;title&gt;: &#34;Homepage | Morgan &amp; Morgan&#34;
+Current meta description: &#34;(none)&#34;</pre>
+
+      <p class="recommendation">These are often the exact snippet Google AI Overviews and ChatGPT search pull from directly - a vague or missing one is a missed one-line summary of your business.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-structured_data-meta-issue">&lt;title&gt;Homepage | Morgan &amp; Morgan | What you do, where you are&lt;/title&gt;
+&lt;meta name=&#34;description&#34; content=&#34;Get a FREE case evaluation today.&#34;&gt;</pre>
+        <button class="copy-btn" onclick="copyFix('fix-structured_data-meta-issue', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">16. No FAQ-style question/answer content found</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 4/5</span>
+          <span class="tag-ie">effort 3/5</span>
+        </div>
+      </div>
+      <div class="location">Answer-Extractability &amp; Fact Density · <code>https://www.morganandmorgan.com, https://www.morganandmorgan.com/attorneys/john-morgan</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Only 0 question mark(s) found; no FAQ heading detected.</pre>
+
+      <p class="recommendation">Q&amp;A content mirrors how users actually phrase prompts to AI engines, making it easy to lift verbatim. Add a short FAQ answering the 3-5 questions customers ask most before buying.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-content_quality-faq-content-missing">Example structure:
+Q: [Question a customer actually asks]
+A: [Direct, one-to-two sentence answer - no marketing fluff.]</pre>
+        <button class="copy-btn" onclick="copyFix('fix-content_quality-faq-content-missing', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+    <div class="finding">
+      <div class="fhead">
+        <div>
+          <div class="ftitle">17. No llms.txt found</div>
+          <span class="badge warning">warning</span>
+        </div>
+        <div class="tags">
+          <span class="tag-ie">impact 2/5</span>
+          <span class="tag-ie">effort 1/5</span>
+        </div>
+      </div>
+      <div class="location">Structured Data &amp; Entity Clarity · <code>https://www.morganandmorgan.com/llms.txt</code></div>
+
+      <div class="evidence-label">Evidence</div>
+      <pre>Request to /llms.txt returned HTTP 404.</pre>
+
+      <p class="recommendation">llms.txt is an emerging, plain-text convention (analogous to robots.txt) that tells AI engines what your site is and which pages matter most. It&#39;s new and not universally adopted yet, so treat this as a cheap, additive signal rather than a must-have.</p>
+
+      
+      <div class="fix-label">Copy-paste fix</div>
+      <div class="fix-block">
+        <pre id="fix-structured_data-llms-txt-missing"># Homepage | Morgan &amp; Morgan
+
+&gt; One or two sentences describing what this business does and who it serves.
+
+## Key pages
+- [Homepage](https://www.morganandmorgan.com): overview of the business
+- [About](#): who we are
+- [Services/Products](#): what we offer
+</pre>
+        <button class="copy-btn" onclick="copyFix('fix-structured_data-llms-txt-missing', this)">Copy</button>
+      </div>
+      
+    </div>
+    
+
+    
+  </section>
+
+  <section>
+    <h2>Full check-by-check detail</h2>
+    <div class="sub">Includes what's already working, not just what's broken.</div>
+    
+    <details class="check-detail">
+      <summary>
+        <span>AI Crawler Access</span>
+        <span>0.0 / 100</span>
+      </summary>
+      <div class="why"><strong>Why this check exists:</strong> If an AI engine&#39;s bot can&#39;t fetch your pages, it doesn&#39;t matter how good your content is - it never enters the answer. This checks whether your robots.txt blocks the bots that power ChatGPT, Claude, Perplexity, and Google AI Overviews, using Python&#39;s standard robots.txt parser against each bot&#39;s declared name.</div>
+      
+      <div class="findings-inner">
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">ChatGPT-User is blocked in robots.txt</div>
+              <span class="badge critical">critical</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 5/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>OpenAI - fetches a page live when a user asks ChatGPT to browse it or a ChatGPT search answer cites it in real time.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">ChatGPT-User is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-chatgpt-user">User-agent: ChatGPT-User
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-chatgpt-user', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">OAI-SearchBot is blocked in robots.txt</div>
+              <span class="badge critical">critical</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 5/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>OpenAI - indexes pages for ChatGPT&#39;s search feature; this is what populates the citations you see in ChatGPT search answers.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">OAI-SearchBot is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-oai-searchbot">User-agent: OAI-SearchBot
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-oai-searchbot', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">PerplexityBot is blocked in robots.txt</div>
+              <span class="badge critical">critical</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 5/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Perplexity - crawls and indexes pages so Perplexity can cite them in answers.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">PerplexityBot is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-perplexitybot">User-agent: PerplexityBot
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-perplexitybot', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Perplexity-User is blocked in robots.txt</div>
+              <span class="badge critical">critical</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 5/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Perplexity - fetches a page live when a user&#39;s question triggers a real-time browse.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">Perplexity-User is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-perplexity-user">User-agent: Perplexity-User
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-perplexity-user', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Claude-Web is blocked in robots.txt</div>
+              <span class="badge critical">critical</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 5/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Anthropic - fetches pages live for Claude&#39;s web search tool, the feature behind Claude&#39;s cited answers.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">Claude-Web is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-claude-web">User-agent: Claude-Web
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-claude-web', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Google-Extended is blocked in robots.txt</div>
+              <span class="badge critical">critical</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 5/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Google - controls whether your content can appear in Google AI Overviews and Gemini answers (separate from normal Googlebot search indexing, which is never affected by this).
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">Google-Extended is currently disallowed, which means this bot cannot fetch your pages to answer live user questions. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-google-extended">User-agent: Google-Extended
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-google-extended', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">GPTBot is blocked in robots.txt</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 3/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>OpenAI - crawls content to train future GPT models.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">GPTBot is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-gptbot">User-agent: GPTBot
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-gptbot', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">ClaudeBot is blocked in robots.txt</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 3/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Anthropic - crawls content to train future Claude models.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">ClaudeBot is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-claudebot">User-agent: ClaudeBot
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-claudebot', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">anthropic-ai is blocked in robots.txt</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 3/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Anthropic - legacy crawler identifier, also used for AI training access.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">anthropic-ai is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-anthropic-ai">User-agent: anthropic-ai
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-anthropic-ai', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">CCBot is blocked in robots.txt</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 3/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Common Crawl - a public web dataset most major LLMs (GPT, Claude, Llama, Mistral, and others) are trained on. Blocking this affects many models&#39; future knowledge of you at once.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">CCBot is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-ccbot">User-agent: CCBot
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-ccbot', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Bytespider is blocked in robots.txt</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 3/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>ByteDance - crawls content to train Doubao and other ByteDance AI models.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">Bytespider is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-bytespider">User-agent: Bytespider
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-bytespider', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Applebot-Extended is blocked in robots.txt</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 3/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/robots.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Apple - controls use of your content for Apple Intelligence features.
+
+Matched rule block:
+User-agent: *
+Disallow: /</pre>
+          <p class="recommendation">Applebot-Extended is currently disallowed, which means this bot cannot crawl your content for model training. Remove or narrow this rule if you want this engine to be able to see your site.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-crawler_access-blocked-applebot-extended">User-agent: Applebot-Extended
+Allow: /
+
+# Add this block to robots.txt (or remove the conflicting Disallow rule under the &#39;*&#39; section shown above).</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-crawler_access-blocked-applebot-extended', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+      </div>
+    </details>
+    
+    <details class="check-detail">
+      <summary>
+        <span>Structured Data &amp; Entity Clarity</span>
+        <span>33.0 / 100</span>
+      </summary>
+      <div class="why"><strong>Why this check exists:</strong> Before an AI engine can decide you&#39;re relevant to a query, it has to resolve what you are - a business entity with a name, category, and location. schema.org JSON-LD and llms.txt give it that answer explicitly instead of forcing it to infer from prose.</div>
+      
+      <div class="findings-inner">
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">No Organization/LocalBusiness structured data found</div>
+              <span class="badge critical">critical</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 5/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Scanned 0 JSON-LD block(s) on the homepage; none declared @type Organization or LocalBusiness.</pre>
+          <p class="recommendation">Without this, an AI engine has to *guess* your name, location, and category from prose. Adding this JSON-LD block to your homepage&#39;s &lt;head&gt; gives it an explicit, unambiguous answer.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-structured_data-schema-entity-missing">&lt;script type=&#34;application/ld+json&#34;&gt;
+{
+  &#34;@context&#34;: &#34;https://schema.org&#34;,
+  &#34;@type&#34;: &#34;LocalBusiness&#34;,
+  &#34;name&#34;: &#34;Morgan &amp; Morgan&#34;,
+  &#34;url&#34;: &#34;https://www.morganandmorgan.com&#34;,
+  &#34;description&#34;: &#34;One sentence describing what you do and who you serve.&#34;,
+  &#34;address&#34;: {
+    &#34;@type&#34;: &#34;PostalAddress&#34;,
+    &#34;streetAddress&#34;: &#34;Street address&#34;,
+    &#34;addressLocality&#34;: &#34;City&#34;,
+    &#34;addressRegion&#34;: &#34;State/Region&#34;,
+    &#34;postalCode&#34;: &#34;ZIP/Postal code&#34;,
+    &#34;addressCountry&#34;: &#34;Country code, e.g. US&#34;
+  },
+  &#34;telephone&#34;: &#34;+1-000-000-0000&#34;
+}
+&lt;/script&gt;</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-structured_data-schema-entity-missing', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">No FAQ content or FAQPage schema found</div>
+              <span class="badge info">info</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 3/5</span>
+              <span class="tag-ie">effort 3/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>No question-style content or FAQPage schema detected on the homepage.</pre>
+          <p class="recommendation">Consider adding a short FAQ section answering the 3-5 questions customers actually ask before buying - this is one of the most directly quotable formats for AI answers.</p>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">No llms.txt found</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 2/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com/llms.txt</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Request to /llms.txt returned HTTP 404.</pre>
+          <p class="recommendation">llms.txt is an emerging, plain-text convention (analogous to robots.txt) that tells AI engines what your site is and which pages matter most. It&#39;s new and not universally adopted yet, so treat this as a cheap, additive signal rather than a must-have.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-structured_data-llms-txt-missing"># Homepage | Morgan &amp; Morgan
+
+&gt; One or two sentences describing what this business does and who it serves.
+
+## Key pages
+- [Homepage](https://www.morganandmorgan.com): overview of the business
+- [About](#): who we are
+- [Services/Products](#): what we offer
+</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-structured_data-llms-txt-missing', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Title/meta description missing or poorly sized</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 3/5</span>
+              <span class="tag-ie">effort 1/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>missing meta description.
+Current &lt;title&gt;: &#34;Homepage | Morgan &amp; Morgan&#34;
+Current meta description: &#34;(none)&#34;</pre>
+          <p class="recommendation">These are often the exact snippet Google AI Overviews and ChatGPT search pull from directly - a vague or missing one is a missed one-line summary of your business.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-structured_data-meta-issue">&lt;title&gt;Homepage | Morgan &amp; Morgan | What you do, where you are&lt;/title&gt;
+&lt;meta name=&#34;description&#34; content=&#34;Get a FREE case evaluation today.&#34;&gt;</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-structured_data-meta-issue', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+      </div>
+    </details>
+    
+    <details class="check-detail">
+      <summary>
+        <span>Answer-Extractability &amp; Fact Density</span>
+        <span>50.0 / 100</span>
+      </summary>
+      <div class="why"><strong>Why this check exists:</strong> Published research on generative engine citation found that fact density, front-loaded direct answers, and quotable Q&amp;A content measurably increase how often an LLM pulls from a page - more than traditional keyword SEO factors. This check operationalizes those findings.</div>
+      
+      <div class="findings-inner">
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Fact density: 1.95 numeric facts per 100 words</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com, https://www.morganandmorgan.com/attorneys/john-morgan</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Counted 22 numeric tokens across 1126 words on 2 page(s).</pre>
+          <p class="recommendation">Above the ~1-per-100-words benchmark associated with higher AI citation rates. No action needed.</p>
+          
+        </div>
+        
+        <div class="finding" style="opacity:.85">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">Homepage has 1 H1 and 4 H2 heading(s)</div>
+              <span class="badge good">good</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Sample headings found: [&#39;For the People,Not the Powerful&#39;, &#34;It&#39;s easy to get started.  The Fee Is Free™. Only pay if we win.&#34;, &#39;Get a FREE case evaluation today&#39;]</pre>
+          <p class="recommendation">No action needed - clear headings help any extraction pipeline (including an LLM&#39;s) segment your content into citable chunks.</p>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">No clear, direct statement of what the business does near the top of the homepage</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 4/5</span>
+              <span class="tag-ie">effort 2/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>First ~350 characters of visible content: &#34;Homepage | Morgan &amp; Morgan Skip to main content For the People, Not the Powerful Get a FREE case evaluation today. As seen on: Morgan &amp; Morgan has recovered ove&#34;</pre>
+          <p class="recommendation">Zyppy&#39;s analysis of AI citation ranking factors scores &#39;answer near the top of the page&#39; as one of the strongest observed factors in whether an LLM cites a page. If the opening is a slogan or hero image caption instead of a plain statement, the engine has to work harder to confirm what you do - and may just cite a competitor whose homepage says it plainly.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-content_quality-opening-missing">Morgan &amp; Morgan is a [category] based in [location] that [what you do / who you serve] since [year].</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-content_quality-opening-missing', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+        <div class="finding" style="">
+          <div class="fhead">
+            <div>
+              <div class="ftitle">No FAQ-style question/answer content found</div>
+              <span class="badge warning">warning</span>
+            </div>
+            
+            <div class="tags">
+              <span class="tag-ie">impact 4/5</span>
+              <span class="tag-ie">effort 3/5</span>
+            </div>
+            
+          </div>
+          <div class="location"><code>https://www.morganandmorgan.com, https://www.morganandmorgan.com/attorneys/john-morgan</code></div>
+          <div class="evidence-label">Evidence</div>
+          <pre>Only 0 question mark(s) found; no FAQ heading detected.</pre>
+          <p class="recommendation">Q&amp;A content mirrors how users actually phrase prompts to AI engines, making it easy to lift verbatim. Add a short FAQ answering the 3-5 questions customers ask most before buying.</p>
+          
+          <div class="fix-label">Copy-paste fix</div>
+          <div class="fix-block">
+            <pre id="fix-detail-content_quality-faq-content-missing">Example structure:
+Q: [Question a customer actually asks]
+A: [Direct, one-to-two sentence answer - no marketing fluff.]</pre>
+            <button class="copy-btn" onclick="copyFix('fix-detail-content_quality-faq-content-missing', this)">Copy</button>
+          </div>
+          
+        </div>
+        
+      </div>
+    </details>
+    
+  </section>
+
+  <footer>
+    Methodology: three checks, each scored 0–100 independently with the reasoning documented in "why this check exists" above; the overall score is their plain average.
+    
+    This audit inspects up to a handful of pages per site (homepage plus a couple of linked pages) — it's a spot-check, not a full crawl, and it reflects what was true at generation time above. See the project README for what's real vs. mocked and what's out of scope.
+  </footer>
+
+</div>
+<script>
+function copyFix(id, btn) {
+  var text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(function () {
+    var original = btn.textContent;
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    setTimeout(function () { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+  });
+}
+</script>
+</body>
+</html>
