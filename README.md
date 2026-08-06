@@ -44,7 +44,7 @@ Google AI Overviews/Gemini, separately from normal Google Search indexing),
 plus training-only crawlers (`GPTBot`, `ClaudeBot`, `CCBot`, `Bytespider`,
 `Applebot-Extended`) weighted lower since blocking those affects a future
 model, not today's answers. This is the one 100%-mechanical, no-judgment-call
-check — we use Python's stdlib `urllib.robotparser` for the actual
+check — I use Python's stdlib `urllib.robotparser` for the actual
 allow/deny decision instead of hand-rolling robots.txt precedence rules, and
 our own code only reconstructs the matching block as evidence. It's first in
 priority because it's a gating condition: perfect content behind a
@@ -62,7 +62,7 @@ for schema.org `LocalBusiness`/`Organization` JSON-LD (the explicit,
 machine-readable answer to that question), `FAQPage` schema wrapping any
 existing Q&A content, the emerging `llms.txt` convention, and title/meta
 description as the fallback signal most small-business sites actually rely
-on. We check JSON-LD only (not Microdata/RDFa) because it's what Google's
+on. I check JSON-LD only (not Microdata/RDFa) because it's what Google's
 own documentation recommends and what Shopify/Squarespace/Wix/WordPress SEO
 plugins emit by default — highest signal for the least effort.
 
@@ -75,7 +75,7 @@ from Princeton, Georgia Tech, and the Allen Institute for AI — ran a
 10,000-query benchmark and found that adding citations, statistics, and
 quotation-style content to a page produced the largest gains (~30–40%+) in
 how often a Bing-Chat-style generative engine cited it, beating traditional
-keyword-SEO tactics; keyword stuffing actually hurt. We operationalize that
+keyword-SEO tactics; keyword stuffing actually hurt. I operationalize that
 as four page-local heuristics: numeric fact density (concrete numbers per
 100 words), a direct-answer opening near the top of the page (also
 supported by Zyppy's separate AI-citation-ranking-factors analysis, which
@@ -84,12 +84,12 @@ scores "answer near the top" as one of the strongest observed factors), FAQ
 answered), and basic heading structure (a parseability signal for any
 extraction pipeline, including an LLM's). *Note: an oft-repeated "44% of
 citations come from the first 30% of a page" stat is widely attributed to
-Zyppy online — we went looking for the source, couldn't trace it to
+Zyppy online — I went looking for the source, couldn't trace it to
 anything they actually published, and dropped it rather than cite a number
-we couldn't verify. Citing research we can't stand behind would undermine
+I couldn't verify. Citing research I can't stand behind would undermine
 the entire premise of an evidence-based tool.*
 
-### What we deliberately did not build, and why
+### What I deliberately did not build, and why
 
 - **Actually querying ChatGPT/Perplexity/Claude live and checking if the
   business gets mentioned.** This is the most obvious thing to build, and we
@@ -99,14 +99,14 @@ the entire premise of an evidence-based tool.*
   customer would type — guess wrong and you get exactly the "generic advice
   that would be identical for any website" failure mode the brief calls out
   as an instant no — and it needs paid API keys per engine, which breaks
-  "running in under 5 minutes" with zero setup. The three checks we built are
+  "running in under 5 minutes" with zero setup. The three checks I built are
   proxies for *why* a business would or wouldn't get cited, derived from
   page evidence that's stable and re-checkable; a live-query check measures
   a symptom, not a cause, and isn't reproducible evidence in the way the
   brief asks for ("name the exact page, show what you found"). This is the
   single highest-value thing to add with more time — see below.
 - **Backlink/authority analysis.** Real signal, but it requires a paid
-  third-party index (Ahrefs/Semrush/Moz) we don't have API access to build
+  third-party index (Ahrefs/Semrush/Moz) I don't have API access to build
   around, and it's a classic-SEO signal already well covered by existing
   tools — it doesn't teach us anything GEO-specific.
 - **Page speed / Core Web Vitals.** Same reasoning — already exhaustively
@@ -131,7 +131,7 @@ visible in that check's code and in the finding evidence itself (e.g. "-35
 points: no Organization/LocalBusiness schema found"). The overall score is
 the **plain average of the three check scores** — no hidden weighting. The
 report's score card shows all three bars plus the arithmetic; add them up
-and divide by 3, and you get the number shown. We considered weighting
+and divide by 3, and you get the number shown. I considered weighting
 Crawler Access higher, since it's the one gating check, but decided a
 business owner being able to audit the math themselves mattered more than a
 theoretically "more correct" weighting scheme.
@@ -147,7 +147,7 @@ fetch of the actual site (`fetch.py`) at run time — real `robots.txt`,
 real HTML, real JSON-LD, parsed with BeautifulSoup/lxml and Python's own
 robots-parser. The `CheckResult.mocked` field and the score-exclusion logic
 in `audit.py` exist in the data model specifically so that *if* a future
-check needs a stubbed/mocked data source (e.g. a paid API we don't have
+check needs a stubbed/mocked data source (e.g. a paid API I don't have
 credentials for), it's structurally impossible for it to silently blend
 fake data into a real score — it'd show up labeled "(mocked)" in the report
 and be excluded from the average. No check currently uses that path.
@@ -156,7 +156,7 @@ and be excluded from the average. No check currently uses that path.
 
 - English-language, roughly-standard-HTML sites. Heavily JS-rendered SPAs
   (client-side-only React/Vue with no server-rendered content) will show as
-  having thin content, because we don't run a headless browser — this is a
+  having thin content, because I don't run a headless browser — this is a
   real product decision, not a bug: most AI retrieval bots also don't
   execute JavaScript, so a JS-only page genuinely *is* less visible to them,
   and the finding is accurate even though the root cause (needs SSR) isn't
@@ -165,7 +165,7 @@ and be excluded from the average. No check currently uses that path.
   handling beyond whatever the `--location` flag puts in the report header.
 - The business-name guess (used to phrase fix snippets naturally) is a
   best-effort heuristic (`og:site_name`, then `<title>`, skipping generic
-  segments like "Homepage" — a real bug we caught testing against Morgan &
+  segments like "Homepage" — a real bug I caught testing against Morgan &
   Morgan, whose `<title>` is literally "Homepage | Morgan & Morgan"). It's
   never used as evidence, only as phrasing.
 
@@ -190,7 +190,7 @@ and be excluded from the average. No check currently uses that path.
    out of scope now — the brief explicitly says skip a database unless
    actually needed, and one audit in time doesn't need persistence.)
 5. **Category-aware benchmarks** — "restaurants in your fact-density bracket
-   average X" — would need a corpus of prior audits we don't have yet.
+   average X" — would need a corpus of prior audits I don't have yet.
 
 ## Project structure
 
